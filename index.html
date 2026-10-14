@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>💌 Cartinha Virtual</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Segoe UI', 'Quicksand', system-ui, sans-serif;
+    }
+
+    body {
+      min-height: 100vh;
+      background: linear-gradient(145deg, #fdeff2 0%, #f8e8ee 100%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+      margin: 0;
+    }
+
+    /* container principal */
+    .carta-wrapper {
+      perspective: 1200px;
+      width: 100%;
+      max-width: 480px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2rem;
+    }
+
+    /* envelope + carta */
+    .envelope-container {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 1.6 / 1;
+      max-width: 420px;
+      cursor: pointer;
+      transition: transform 0.2s ease;
+    }
+
+    .envelope-container:hover {
+      transform: scale(1.01);
+    }
+
+    /* base do envelope (fundo) */
+    .envelope-base {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      background: #f7d9e0;
+      border-radius: 0 0 16px 16px;
+      box-shadow: 0 12px 28px rgba(180, 120, 140, 0.25), 0 4px 12px rgba(0, 0, 0, 0.08);
+      border: 2px solid #eec8d4;
+      border-top: none;
+      z-index: 2;
+      overflow: hidden;
+    }
+
+    /* aba superior (fechada) */
+    .aba-superior {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 0;
+      border-left: 210px solid transparent;
+      border-right: 210px solid transparent;
+      border-top: 110px solid #f7d9e0;
+      border-radius: 16px 16px 0 0;
+      filter: drop-shadow(0 4px 6px rgba(200, 140, 160, 0.2));
+      transform-origin: top;
+      transition: transform 0.6s cubic-bezier(0.34, 1.2, 0.64, 1), opacity 0.3s ease;
+      z-index: 6;
+    }
+
+    /* quando aberto, a aba se dobra para cima/trás */
+    .aberto .aba-superior {
+      transform: rotateX(180deg) translateY(4px);
+      opacity: 0.9;
+      border-top-color: #f2cdd9;
+    }
+
+    /* corpo da carta (parte que aparece) */
+    .carta {
+      position: absolute;
+      top: 12px;
+      left: 5%;
+      width: 90%;
+      height: 0;
+      background: #fffafc;
+      border-radius: 16px 16px 12px 12px;
+      box-shadow: 0 8px 24px rgba(160, 100, 120, 0.2);
+      padding: 1.8rem 1.5rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      transition: height 0.7s cubic-bezier(0.23, 1, 0.32, 1), top 0.5s ease, box-shadow 0.3s;
+      z-index: 5;
+      border: 1px solid #ffe3ec;
+      border-top: 3px solid #ffe3ec;
+      overflow: hidden;
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    /* carta aberta: aparece e cresce */
+    .aberto .carta {
+      height: calc(100% - 12px);
+      top: 12px;
+      opacity: 1;
+      pointer-events: auto;
+      box-shadow: 0 20px 32px rgba(180, 120, 140, 0.3);
+    }
+
+    /* conteúdo interno da carta */
+    .conteudo-carta {
+      display: flex;
+      flex-direction: column;
+      gap: 0.8rem;
+      width: 100%;
+    }
+
+    .conteudo-carta .coracao {
+      font-size: 2.2rem;
+      line-height: 1;
+      animation: pulsar 2s infinite ease-in-out;
+    }
+
+    @keyframes pulsar {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.15); }
+    }
+
+    .conteudo-carta p {
+      font-size: 1.2rem;
+      font-weight: 500;
+      color: #6b4e5a;
+      line-height: 1.5;
+      letter-spacing: -0.2px;
+      padding: 0 0.2rem;
+      text-shadow: 0 1px 2px rgba(255, 230, 240, 0.8);
+    }
+
+    .conteudo-carta .assinatura {
+      font-size: 0.9rem;
+      color: #b38b9b;
+      margin-top: 0.4rem;
+      font-style: italic;
+      border-top: 1px dashed #f0cfda;
+      padding-top: 0.8rem;
+      width: 70%;
+      align-self: center;
+    }
+
+    /* lacre decorativo */
+    .lacre {
+      position: absolute;
+      bottom: 18px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 48px;
+      height: 48px;
+      background: #f5b8cb;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.6rem;
+      color: white;
+      z-index: 7;
+      box-shadow: 0 4px 8px rgba(200, 130, 150, 0.4);
+      transition: opacity 0.25s ease, transform 0.25s ease;
+      border: 2px solid #fad1df;
+    }
+
+    .aberto .lacre {
+      opacity: 0;
+      transform: translateX(-50%) scale(0.6);
+      pointer-events: none;
+    }
+
+    /* botão de instrução */
+    .instrucao {
+      background: #f5d3df;
+      color: #6b4e5a;
+      border: none;
+      padding: 0.7rem 1.8rem;
+      border-radius: 60px;
+      font-size: 1rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      box-shadow: 0 4px 12px rgba(190, 130, 150, 0.25);
+      cursor: pointer;
+      transition: all 0.2s ease;
+      border: 2px solid #f8dae5;
+      margin-top: 0.5rem;
+    }
+
+    .instrucao:hover {
+      background: #f8dee9;
+      box-shadow: 0 8px 18px rgba(190, 130, 150, 0.35);
+      transform: translateY(-2px);
+    }
+
+    .instrucao:active {
+      transform: translateY(2px);
+      box-shadow: 0 2px 8px rgba(190, 130, 150, 0.25);
+    }
+
+    /* decoração de fundo */
+    .fofo-deco {
+      position: fixed;
+      font-size: 1.8rem;
+      opacity: 0.2;
+      pointer-events: none;
+      user-select: none;
+      z-index: 0;
+    }
+
+    /* ajuste de borda para aba superior em telas pequenas */
+    @media (max-width: 500px) {
+      .aba-superior {
+        border-left-width: 180px;
+        border-right-width: 180px;
+        border-top-width: 95px;
+      }
+      .conteudo-carta p {
+        font-size: 1rem;
+      }
+    }
+
+    @media (max-width: 400px) {
+      .aba-superior {
+        border-left-width: 150px;
+        border-right-width: 150px;
+        border-top-width: 80px;
+      }
+    }
+
+    /* pequenos brilhos */
+    .brilho {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      top: 0;
+      left: 0;
+      background: radial-gradient(circle at 20% 30%, rgba(255, 240, 245, 0.6) 0%, transparent 60%);
+      border-radius: inherit;
+      pointer-events: none;
+      z-index: 10;
+    }
+  </style>
+</head>
+<body>
+  <!-- decoração de fundo fofa -->
+  <div class="fofo-deco" style="top: 5%; left: 5%;">🌸</div>
+  <div class="fofo-deco" style="top: 15%; right: 8%;">✨</div>
+  <div class="fofo-deco" style="bottom: 12%; left: 10%;">🧸</div>
+  <div class="fofo-deco" style="bottom: 20%; right: 12%;">💖</div>
+  <div class="fofo-deco" style="top: 45%; left: 3%;">🌷</div>
+  <div class="fofo-deco" style="top: 60%; right: 5%;">🦋</div>
+
+  <div class="carta-wrapper">
+    <!-- área clicável do envelope -->
+    <div class="envelope-container" id="envelopeContainer">
+      <div class="envelope-base">
+        <div class="brilho"></div>
+      </div>
+      <!-- aba que abre -->
+      <div class="aba-superior"></div>
+      <!-- a carta em si -->
+      <div class="carta" id="carta">
+        <div class="conteudo-carta">
+          <div class="coracao">💗</div>
+          <p>“mesmo que não esteja aqui,<br>ainda estarei pensando em você”</p>
+          <div class="assinatura">com carinho, sempre ✨</div>
+        </div>
+      </div>
+      <!-- lacre decorativo -->
+      <div class="lacre">💌</div>
+    </div>
+
+    <button class="instrucao" id="btnToggle">
+      <span>💌</span> Abrir cartinha
+    </button>
+  </div>
+
+  <script>
+    (function() {
+      const container = document.getElementById('envelopeContainer');
+      const btnToggle = document.getElementById('btnToggle');
+
+      // Função para alternar o estado aberto/fechado
+      function toggleCarta() {
+        container.classList.toggle('aberto');
+        const estaAberto = container.classList.contains('aberto');
+        btnToggle.innerHTML = estaAberto 
+          ? '<span>🔒</span> Fechar cartinha' 
+          : '<span>💌</span> Abrir cartinha';
+      }
+
+      // Clique no envelope (área da carta)
+      container.addEventListener('click', function(e) {
+        // Previne que cliques dentro da carta fechem acidentalmente (opcional)
+        // mas queremos que clicar na carta também feche? Sim, para facilitar.
+        // Só evitamos se for no botão? Não, o botão está fora do container.
+        toggleCarta();
+      });
+
+      // Botão também controla
+      btnToggle.addEventListener('click', function(e) {
+        e.stopPropagation(); // evita conflito com o clique do container (não é necessário, mas seguro)
+        toggleCarta();
+      });
+
+      // Impede que o clique dentro da carta (quando aberta) feche? 
+      // Na verdade, se a pessoa clicar na carta, é bom fechar também? 
+      // Vou manter: clicar em qualquer lugar do envelope-container (incluindo a carta) alterna.
+      // Mas para evitar fechar sem querer, tudo bem.
+      // Porém, se o usuário quiser selecionar o texto, pode ser chato. 
+      // Vou parar a propagação em parágrafos? Melhor deixar simples.
+      // Pequeno ajuste: se clicar dentro da carta, não faz nada? 
+      // Vou manter o toggle, mas com um toque: se o clique for no parágrafo, não alterna? 
+      // Vou descomplicar: clique no container alterna, e o botão é o principal.
+
+      // Mas para melhor UX, se clicar dentro do conteúdo da carta não deve fechar? 
+      // Vou adicionar um listener no conteúdo da carta para parar propagação
+      // Assim o usuário pode selecionar o texto sem fechar sem querer.
+      const cartaDiv = document.getElementById('carta');
+      cartaDiv.addEventListener('click', function(e) {
+        e.stopPropagation(); // impede que o clique na carta feche o envelope
+        // porém, se clicar na carta, não faz nada. O usuário usa o botão para fechar.
+        // Isso evita fechamento acidental.
+      });
+
+      // Mas o botão ainda funciona. E clicar fora da carta (na aba, base) alterna.
+      // Ajuste fino: clicar no lacre ou na aba também alterna.
+      // Tudo certo.
+
+      // Inicializa com o texto do botão correto
+      btnToggle.innerHTML = '<span>💌</span> Abrir cartinha';
+    })();
+  </script>
